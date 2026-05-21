@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../lib/auth";
+import { DEMO_MODE } from "../lib/demo";
 import { PreTab } from "../features/pre/PreTab";
 import { ActiveTab } from "../features/active/ActiveTab";
 import { PostTab } from "../features/post/PostTab";
@@ -15,7 +16,15 @@ export function Dashboard() {
   return (
     <div className="app">
       <div className="top-bar">
-        <h1><i className="ti ti-military-award" /> 군입대자 관리 시스템</h1>
+        <h1>
+          <i className="ti ti-military-award" /> 군입대자 관리 시스템
+          {DEMO_MODE && (
+            <span style={{
+              fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 12,
+              background: "#fef3c7", color: "#92400e", marginLeft: 8,
+            }}>DEMO</span>
+          )}
+        </h1>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <span style={{ fontSize: 12, color: "#666" }}>
             {profile?.email} · {profile?.role ?? "viewer"}

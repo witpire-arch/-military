@@ -26,10 +26,12 @@ export function AlertsTab() {
   }, []);
 
   function update(code: string, patch: Partial<Topic>) {
-    setTopics((m) => ({
-      ...m,
-      [code]: { region_code: code, telegram_chat_id: "", telegram_topic_id: null, enabled: true, ...m[code], ...patch },
-    }));
+    setTopics((m) => {
+      const cur: Topic = m[code] ?? {
+        region_code: code, telegram_chat_id: "", telegram_topic_id: null, enabled: true,
+      };
+      return { ...m, [code]: { ...cur, ...patch } };
+    });
   }
 
   async function save() {

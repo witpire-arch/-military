@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
 import type { AppRole } from "./database.types";
+import { DEMO_MODE, DEMO_PROFILE } from "./demo";
 
 interface Profile {
   id: string;
@@ -22,12 +23,23 @@ interface AuthCtx {
 
 const Ctx = createContext<AuthCtx | null>(null);
 
+const DEMO_FLAG_KEY = "military_demo_signed_in";
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (DEMO_MODE) {
+      const signed = localStorage.getItem(DEMO_FLAG_KEY) === "1";
+      if (signed) {
+        setSession({ user: { id: DEMO_PROFILE.id } } as unknown as Session);
+        setProfile(DEMO_PROFILE);
+      }
+      setLoading(false);
+      return;
+    }
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setLoading(false);
@@ -37,6 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (DEMO_MODE) return;
     if (!session) { setProfile(null); return; }
     supabase.from("profiles").select("*").eq("id", session.user.id).single()
       .then(({ data }) => setProfile(data as Profile | null));
@@ -44,11 +57,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value: AuthCtx = {
     session, profile, loading,
-    signIn: async (email, password) => {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+    signIn: async (email, _password) => {
+      if (DEMO_MODE) {
+        localStorage.setItem(DEMO_FLAG_KEY, "1");
+        setSession({ user: { id: DEMO_PROFILE.id } } as unknown as Session);
+        setProfile({ ...DEMO_PROFILE, email: email || DEMO_PROFILE.email });
+        return { error: null };
+      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password: _password });
       return { error: error?.message ?? null };
     },
-    signOut: async () => { await supabase.auth.signOut(); },
+    signOut: async () => {
+      if (DEMO_MODE) {
+        localStorage.removeItem(DEMO_FLAG_KEY);
+        setSession(null); setProfile(null);
+        return;
+      }
+      await supabase.auth.signOut();
+    },
   };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
@@ -57,9 +83,4 @@ export function useAuth() {
   const v = useContext(Ctx);
   if (!v) throw new Error("useAuth must be inside AuthProvider");
   return v;
-}
-
-export function useRequireRole(roles: AppRole[]): boolean {
-  const { profile } = useAuth();
-  return !!profile && roles.includes(profile.role);
 }
