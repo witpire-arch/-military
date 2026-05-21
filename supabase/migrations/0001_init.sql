@@ -57,6 +57,8 @@ create table soldiers (
   reach reach_kind,
   attend_excluded text,                        -- 출결제외 상황(제외신청/제외/공란)
 
+  contact_ok text,                             -- 연락여부 o/x (공통)
+
   contact_name text,                           -- 연락가능자
   contact_relation text,
   contact_tel text,
@@ -80,10 +82,9 @@ create index soldiers_enlist_idx on soldiers(enlist_date);
 create table pre_details (
   soldier_id uuid primary key references soldiers on delete cascade,
   enlist_period text,                          -- 예: "2025.08월"
-  contact_ok text,                             -- 연락여부 o/x
   worship_type text,                           -- 본예배 등
   worship_status text,                         -- o/x
-  tithe text,                                  -- o/x
+  tithe numeric,                               -- 입대 전 십일조(숫자)
   -- 총무님 면담
   head_date date,
   head_react text,
